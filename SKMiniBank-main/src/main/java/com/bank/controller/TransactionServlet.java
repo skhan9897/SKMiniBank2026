@@ -1,0 +1,75 @@
+package com.bank.controller;
+
+import com.bank.dao.TransactionDAO;
+import com.bank.model.Transaction;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet("/TransactionServlet")
+public class TransactionServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
+
+        try {
+
+            TransactionDAO dao = new TransactionDAO();
+
+            String accountNumber = request.getParameter("accountNumber");
+            String view = request.getParameter("view");
+            String startDate = request.getParameter("startDate");
+            String endDate = request.getParameter("endDate");
+
+            List<Transaction> transactionList;
+
+            if (accountNumber != null && !accountNumber.trim().isEmpty()) {
+                if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
+                    transactionList = dao.getTransactionsByRange(accountNumber, startDate, endDate);
+                } else {
+                    transactionList = dao.getTransactionsByAccount(accountNumber);
+                }
+            } else if ("today".equalsIgnoreCase(view)) {
+                transactionList = dao.getTodayTransactions();
+            } else {
+                transactionList = dao.getAllTransactions();
+            }
+
+            request.setAttribute("transactionList", transactionList);
+            request.setAttribute("accountNumber", accountNumber);
+            request.setAttribute("startDate", startDate);
+            request.setAttribute("endDate", endDate);
+            request.setAttribute("view", view);
+
+            request.getRequestDispatcher("/admin/transaction.jsp")
+                   .forward(request, response);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            response.sendRedirect(
+                    "admin/transaction.jsp?msg=error");
+
+        }
+
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
+
+        doGet(request, response);
+
+    }
+
+}
